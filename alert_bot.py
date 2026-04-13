@@ -5,7 +5,7 @@ from groq import Groq
 import yfinance as yf
 import ccxt
 
-# ===== CONFIG (Loaded securely from GitHub Secrets later) =====
+# ===== CONFIG (Loaded securely from GitHub Secrets) =====
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
@@ -47,14 +47,14 @@ def get_price_data(symbol, mtype):
                 "change_24h": ((current - prev) / prev) * 100,
                 "volume": data["Volume"].iloc[-1]
             }
-    except:
+    except Exception:
         return {"price": 0, "change_24h": 0, "volume": 0}
 
 def analyze_with_ai(name, mtype, data):
     client = Groq(api_key=GROQ_API_KEY)
     prompt = f"""You are a professional trading analyst. Analyze {name} ({mtype}):
 Current Data:
-- Price: {data['price']:.4f if isinstance(data['price'], float) else data['price']}
+- Price: {data['price']:.4f}
 - 24h Change: {data['change_24h']:.2f}%
 - Volume: {data['volume']:,.0f}
 
@@ -108,6 +108,7 @@ def main():
         print(f"Analyzing {m['name']}...")
         data = get_price_data(m["symbol"], m["type"])
         if data["price"] == 0:
+            print(f"⚠️ Skipped {m['name']} - no data")
             continue
         analysis = analyze_with_ai(m["name"], m["type"], data)
         if not analysis or analysis.get("signal") == "WAIT":
