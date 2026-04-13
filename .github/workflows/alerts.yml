@@ -1,0 +1,35 @@
+name: Liwem VTA Trading Alerts
+
+on:
+  schedule:
+    # Forex & Indices: Every 30 min during London/NY overlap (Mon-Fri, 7am-4pm UTC)
+    - cron: '*/30 7-16 * * 1-5'
+    # Crypto: Every hour, 24/7
+    - cron: '0 * * * *'
+  workflow_dispatch:  # Allows manual "Run workflow" button
+
+jobs:
+  run-alerts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install groq yfinance ccxt requests python-dateutil
+
+      - name: Run alert bot
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: python alert_bot.py
